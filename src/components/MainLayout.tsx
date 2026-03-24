@@ -1,13 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Header } from './common/Header';
 import { useGitHubStorage } from '../hooks/useGitHubStorage';
 import { useExpenseStore } from '../store/expenseStore';
 import { VoiceInput } from './VoiceInput/VoiceInput';
 import { ManualInput } from './VoiceInput/ManualInput';
+import { useExpenseParser } from '../hooks/useExpenseParser';
+import type { ParsedExpense } from '../types/expense';
 
 export function MainLayout() {
   const { storage, isInitialized, isInitializing, error: storageError } = useGitHubStorage();
   const { expenses, isLoading, fetchExpenses, error: expenseError } = useExpenseStore();
+  const { parse, error: parserError } = useExpenseParser();
+  const [_parsedExpense, setParsedExpense] = useState<ParsedExpense | null>(null);
 
   // Fetch expenses when storage is initialized
   useEffect(() => {
@@ -21,8 +25,27 @@ export function MainLayout() {
   // Handle transcript from voice or manual input
   const handleTranscript = (text: string) => {
     console.log('Transcript received:', text);
-    // TODO: Parse expense in Phase 5
-    alert(`Transcript ricevuto: "${text}"\n\nIl parsing verrà implementato nella Fase 5!`);
+
+    // Parse the expense
+    const parsed = parse(text);
+
+    if (parsed) {
+      setParsedExpense(parsed);
+
+      // Show parsed result (temporary - will be replaced by modal in Phase 6)
+      const message = `✅ Spesa parsata con successo!\n\n` +
+        `Importo: €${parsed.amount.toFixed(2)}\n` +
+        `Categoria: ${parsed.category}\n` +
+        `Data: ${parsed.date}\n` +
+        `Descrizione: ${parsed.description}\n` +
+        `Confidenza: ${(parsed.confidence * 100).toFixed(0)}%\n\n` +
+        (parsed.confidence < 0.5 ? '⚠️ Confidenza bassa - verifica i dati!\n\n' : '') +
+        `Nella Fase 6 verrà aggiunto il modal per modificare questi dati prima di salvare.`;
+
+      alert(message);
+    } else {
+      alert(`❌ Errore nel parsing:\n\n${parserError}\n\nRiprova con un formato più chiaro.\n\nEsempio: "Ho speso 45 euro per trasporti oggi"`);
+    }
   };
 
   return (
