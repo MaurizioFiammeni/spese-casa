@@ -6,10 +6,11 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
+  footer?: ReactNode;
   size?: 'sm' | 'md' | 'lg';
 }
 
-export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }: ModalProps) {
   // Handle ESC key to close
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -84,6 +85,13 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {children}
         </div>
+
+        {/* Footer */}
+        {footer && (
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );
