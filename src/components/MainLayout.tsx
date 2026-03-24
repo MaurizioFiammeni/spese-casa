@@ -5,13 +5,15 @@ import { useExpenseStore } from '../store/expenseStore';
 import { VoiceInput } from './VoiceInput/VoiceInput';
 import { ManualInput } from './VoiceInput/ManualInput';
 import { useExpenseParser } from '../hooks/useExpenseParser';
+import { ExpenseEditModal } from './ExpenseForm/ExpenseEditModal';
 import type { ParsedExpense } from '../types/expense';
 
 export function MainLayout() {
   const { storage, isInitialized, isInitializing, error: storageError } = useGitHubStorage();
-  const { expenses, isLoading, fetchExpenses, error: expenseError } = useExpenseStore();
+  const { expenses, isLoading, fetchExpenses, addExpense, error: expenseError } = useExpenseStore();
   const { parse, error: parserError } = useExpenseParser();
-  const [_parsedExpense, setParsedExpense] = useState<ParsedExpense | null>(null);
+  const [parsedExpense, setParsedExpense] = useState<ParsedExpense | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch expenses when storage is initialized
   useEffect(() => {
@@ -31,21 +33,30 @@ export function MainLayout() {
 
     if (parsed) {
       setParsedExpense(parsed);
-
-      // Show parsed result (temporary - will be replaced by modal in Phase 6)
-      const message = `✅ Spesa parsata con successo!\n\n` +
-        `Importo: €${parsed.amount.toFixed(2)}\n` +
-        `Categoria: ${parsed.category}\n` +
-        `Data: ${parsed.date}\n` +
-        `Descrizione: ${parsed.description}\n` +
-        `Confidenza: ${(parsed.confidence * 100).toFixed(0)}%\n\n` +
-        (parsed.confidence < 0.5 ? '⚠️ Confidenza bassa - verifica i dati!\n\n' : '') +
-        `Nella Fase 6 verrà aggiunto il modal per modificare questi dati prima di salvare.`;
-
-      alert(message);
+      setIsModalOpen(true); // Open modal for review
     } else {
       alert(`❌ Errore nel parsing:\n\n${parserError}\n\nRiprova con un formato più chiaro.\n\nEsempio: "Ho speso 45 euro per trasporti oggi"`);
     }
+  };
+
+  // Handle save from modal
+  const handleSave = async (data: ParsedExpense) => {
+    if (!storage) {
+      throw new Error('Storage non inizializzato');
+    }
+
+    await addExpense(storage, {
+      amount: data.amount,
+      category: data.category as any,
+      date: data.date,
+      description: data.description,
+    });
+  };
+
+  // Handle modal close
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setParsedExpense(null);
   };
 
   return (
@@ -169,6 +180,15 @@ export function MainLayout() {
             <p className="text-gray-600">Caricamento spese...</p>
           </div>
         )}
+
+        {/* Edit Modal */}
+        <ExpenseEditModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          parsedData={parsedExpense}
+          onSave={handleSave}
+          confidence={parsedExpense?.confidence || 1}
+        />
       </main>
     </div>
   );
