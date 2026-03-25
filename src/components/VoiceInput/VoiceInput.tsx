@@ -24,32 +24,57 @@ export function VoiceInput({ onTranscript, disabled = false }: VoiceInputProps) 
     resetTranscript();
   }
 
-  const handleClick = () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
+  // Push-to-talk: press and hold to record
+  const handleMouseDown = () => {
+    if (!isRecording) {
       clearError();
       startRecording();
     }
   };
 
+  const handleMouseUp = () => {
+    if (isRecording) {
+      stopRecording();
+    }
+  };
+
+  // Also handle touch events for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+    if (!isRecording) {
+      clearError();
+      startRecording();
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    if (isRecording) {
+      stopRecording();
+    }
+  };
+
   return (
     <div className="flex flex-col items-center">
-      {/* Microphone Button */}
+      {/* Microphone Button - Push to Talk */}
       <button
-        onClick={handleClick}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
         disabled={disabled || !isSupported}
         className={`
           relative w-24 h-24 rounded-full flex items-center justify-center
-          transition-all duration-300 shadow-lg
+          transition-all duration-300 shadow-lg select-none
           ${
             isRecording
-              ? 'bg-red-500 hover:bg-red-600 animate-pulse shadow-red-500/50'
-              : 'bg-primary hover:bg-primary/90 shadow-primary/50'
+              ? 'bg-red-500 animate-pulse shadow-red-500/50'
+              : 'bg-primary shadow-primary/50'
           }
-          ${disabled || !isSupported ? 'opacity-50 cursor-not-allowed' : 'hover:scale-110 active:scale-95'}
+          ${disabled || !isSupported ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'}
         `}
-        aria-label={isRecording ? 'Ferma registrazione' : 'Inizia registrazione vocale'}
+        aria-label="Tieni premuto per registrare"
       >
         {isRecording ? (
           // Stop icon
@@ -101,7 +126,7 @@ export function VoiceInput({ onTranscript, disabled = false }: VoiceInputProps) 
 
         {isRecording && (
           <p className="text-primary font-medium animate-pulse">
-            🎤 Parla ora...
+            🎤 Parla ora... (rilascia per fermare)
           </p>
         )}
 
@@ -113,7 +138,7 @@ export function VoiceInput({ onTranscript, disabled = false }: VoiceInputProps) 
 
         {!isRecording && !error && isSupported && (
           <p className="text-gray-500 text-sm">
-            Tocca il microfono per dettare una spesa
+            Tieni premuto il microfono per dettare una spesa
           </p>
         )}
       </div>
