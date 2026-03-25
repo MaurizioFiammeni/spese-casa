@@ -59,45 +59,59 @@ export function MainLayout() {
 
   // Handle save from modal
   const handleSave = async (data: ParsedExpense) => {
+    // Try online save with timeout, fallback to offline
     if (isOnline && storage) {
-      // Online: save to GitHub
-      await addExpense(storage, {
-        amount: data.amount,
-        category: data.category as any,
-        date: data.date,
-        description: data.description,
-      });
-    } else {
-      // Offline: queue for later sync
-      const { offlineQueue } = await import('../services/offlineQueue');
-      await offlineQueue.queueAddExpense({
-        amount: data.amount,
-        category: data.category as any,
-        date: data.date,
-        description: data.description,
-      });
+      try {
+        // Try to save to GitHub with 10 second timeout
+        const savePromise = addExpense(storage, {
+          amount: data.amount,
+          category: data.category as any,
+          date: data.date,
+          description: data.description,
+        });
 
-      // Add to local state optimistically
-      const newExpense = {
-        id: crypto.randomUUID(),
-        amount: data.amount,
-        category: data.category as any,
-        date: data.date,
-        description: data.description,
-        createdAt: new Date().toISOString(),
-        createdBy: 'offline',
-        updatedAt: new Date().toISOString(),
-      };
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Network timeout')), 10000)
+        );
 
-      // Update local state
-      const currentExpenses = [...expenses, newExpense].sort((a, b) =>
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
-
-      // Manually update the store
-      const { useExpenseStore } = await import('../store/expenseStore');
-      useExpenseStore.getState().setExpenses(currentExpenses);
+        await Promise.race([savePromise, timeoutPromise]);
+        // Success! GitHub save completed
+        return;
+      } catch (error) {
+        console.warn('Online save failed, falling back to offline queue:', error);
+        // Fall through to offline save
+      }
     }
+
+    // Offline or online save failed: queue for later sync
+    const { offlineQueue } = await import('../services/offlineQueue');
+    await offlineQueue.queueAddExpense({
+      amount: data.amount,
+      category: data.category as any,
+      date: data.date,
+      description: data.description,
+    });
+
+    // Add to local state optimistically
+    const newExpense = {
+      id: crypto.randomUUID(),
+      amount: data.amount,
+      category: data.category as any,
+      date: data.date,
+      description: data.description,
+      createdAt: new Date().toISOString(),
+      createdBy: storage?.constructor.name.includes('GitHub') ? 'pending' : 'offline',
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Update local state
+    const currentExpenses = [...expenses, newExpense].sort((a, b) =>
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    // Manually update the store
+    const { useExpenseStore } = await import('../store/expenseStore');
+    useExpenseStore.getState().setExpenses(currentExpenses);
   };
 
   // Handle modal close
