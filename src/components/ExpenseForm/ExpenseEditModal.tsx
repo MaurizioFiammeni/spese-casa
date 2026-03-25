@@ -53,11 +53,6 @@ export function ExpenseEditModal({
       return;
     }
 
-    if (!description.trim()) {
-      setError('Inserisci una descrizione');
-      return;
-    }
-
     setIsSaving(true);
     setError(null);
 
@@ -66,7 +61,7 @@ export function ExpenseEditModal({
         amount,
         category,
         date,
-        description: description.trim(),
+        description: description.trim() || category, // Use category if description is empty
         confidence,
       });
 
@@ -86,7 +81,7 @@ export function ExpenseEditModal({
     }
   };
 
-  const isValid = amount > 0 && date && description.trim().length > 0;
+  const isValid = amount > 0 && date; // Description is optional
   const isLowConfidence = confidence < 0.5;
 
   // Footer with buttons
@@ -180,7 +175,7 @@ export function ExpenseEditModal({
         {/* Description */}
         <div>
           <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-            Descrizione *
+            Descrizione (opzionale)
           </label>
           <input
             id="description"
@@ -188,9 +183,12 @@ export function ExpenseEditModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={isSaving}
-            placeholder="Es: Trasporti, Spesa settimanale, etc."
+            placeholder="Lascia vuoto per usare solo la categoria"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
           />
+          <p className="mt-1 text-xs text-gray-500">
+            Se vuoto, verrà usato il nome della categoria
+          </p>
         </div>
 
         {/* Error Message */}

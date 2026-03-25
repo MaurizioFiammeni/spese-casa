@@ -6,9 +6,10 @@ import { ExpenseGroup } from './ExpenseGroup';
 interface ExpenseListProps {
   expenses: Expense[];
   onDelete: (id: string) => Promise<void>;
+  onDeleteMonth?: (expenseIds: string[]) => Promise<void>;
 }
 
-export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
+export function ExpenseList({ expenses, onDelete, onDeleteMonth }: ExpenseListProps) {
   // Group expenses by month
   const groupedExpenses = useMemo(() => {
     const groups = new Map<string, Expense[]>();
@@ -76,6 +77,7 @@ export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
           month={month}
           expenses={monthExpenses}
           onDelete={onDelete}
+          onDeleteMonth={onDeleteMonth}
         />
       ))}
     </div>

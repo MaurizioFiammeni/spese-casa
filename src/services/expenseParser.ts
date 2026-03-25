@@ -106,32 +106,10 @@ export class ExpenseParser {
   /**
    * Generate description from original text
    */
-  private generateDescription(originalText: string, category: string): string {
-    // Clean up the text
-    let desc = originalText
-      // Remove amounts
-      .replace(/\d+[.,]?\d*\s*(?:euro|€)/gi, '')
-      // Remove common verbs
-      .replace(/\b(?:ho\s+)?(?:speso|pagato|comprato|acquistato)\b/gi, '')
-      // Remove time expressions
-      .replace(/\b(?:oggi|ieri|l'altro ieri|il giorno)\b/gi, '')
-      // Remove prepositions
-      .replace(/\b(?:per|di|da|a|in)\b/gi, '')
-      // Clean extra spaces
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    // If description is too short or empty, use category
-    if (desc.length < 3) {
-      desc = category;
-    }
-
-    // Capitalize first letter
-    if (desc.length > 0) {
-      desc = desc.charAt(0).toUpperCase() + desc.slice(1);
-    }
-
-    return desc;
+  private generateDescription(_originalText: string, category: string): string {
+    // Default: use only category name
+    // User can add more details manually if needed
+    return category;
   }
 
   /**

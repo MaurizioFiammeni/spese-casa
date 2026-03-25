@@ -165,6 +165,14 @@ export function MainLayout() {
                   await deleteExpense(storage, id);
                 }
               }}
+              onDeleteMonth={async (expenseIds) => {
+                if (storage) {
+                  // Delete all expenses in batch
+                  for (const id of expenseIds) {
+                    await deleteExpense(storage, id);
+                  }
+                }
+              }}
             />
           </>
         )}
