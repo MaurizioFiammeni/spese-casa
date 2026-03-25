@@ -22,24 +22,24 @@ export function aggregateByCategory(expenses: Expense[]): Record<string, number>
  * Aggregate expenses by month
  */
 export function aggregateByMonth(expenses: Expense[]): Array<{ month: string; total: number }> {
-  const monthMap = new Map<string, number>();
+  const monthMap = new Map<string, { date: Date; total: number }>();
 
   expenses.forEach((expense) => {
-    const monthKey = format(startOfMonth(new Date(expense.date)), 'MMM yyyy', { locale: it });
+    const monthStart = startOfMonth(new Date(expense.date));
+    const monthKey = format(monthStart, 'MMM yyyy', { locale: it });
 
     if (!monthMap.has(monthKey)) {
-      monthMap.set(monthKey, 0);
+      monthMap.set(monthKey, { date: monthStart, total: 0 });
     }
-    monthMap.set(monthKey, monthMap.get(monthKey)! + expense.amount);
+    const current = monthMap.get(monthKey)!;
+    current.total += expense.amount;
   });
 
-  // Convert to array and sort by date
+  // Convert to array and sort by actual date
   return Array.from(monthMap.entries())
-    .map(([month, total]) => ({ month, total }))
-    .sort((a, b) => {
-      // Simple string sort works for "MMM yyyy" format
-      return a.month.localeCompare(b.month);
-    });
+    .map(([month, data]) => ({ month, total: data.total, date: data.date }))
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .map(({ month, total }) => ({ month, total })); // Remove date from final result
 }
 
 /**
