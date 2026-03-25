@@ -8,6 +8,7 @@ import { useExpenseParser } from '../hooks/useExpenseParser';
 import { ExpenseEditModal } from './ExpenseForm/ExpenseEditModal';
 import { ExpenseList } from './ExpenseList/ExpenseList';
 import { ExportButton } from './Export/ExportButton';
+import { useOfflineSync } from '../hooks/useOfflineSync';
 import { ChartsPage } from './Charts/ChartsPage';
 import { InstallPrompt } from './common/InstallPrompt';
 import type { ParsedExpense } from '../types/expense';
@@ -18,6 +19,7 @@ export function MainLayout() {
   const { storage, isInitialized, isInitializing, error: storageError } = useGitHubStorage();
   const { expenses, isLoading, fetchExpenses, addExpense, deleteExpense, error: expenseError } = useExpenseStore();
   const { parse, error: parserError } = useExpenseParser();
+  const { isOnline, pendingCount, isSyncing, syncNow, cacheData } = useOfflineSync(storage);
   const [parsedExpense, setParsedExpense] = useState<ParsedExpense | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('list');
@@ -30,6 +32,15 @@ export function MainLayout() {
       });
     }
   }, [storage, isInitialized, fetchExpenses]);
+
+  // Cache expenses whenever they change
+  useEffect(() => {
+    if (expenses.length > 0) {
+      cacheData(expenses).catch((err) => {
+        console.error('Failed to cache expenses:', err);
+      });
+    }
+  }, [expenses, cacheData]);
 
   // Handle transcript from voice or manual input
   const handleTranscript = (text: string) => {
@@ -46,13 +57,12 @@ export function MainLayout() {
     }
   };
 
-  // Handle save from modal - ONLINE-ONLY (simplified)
+  // Handle save from modal
   const handleSave = async (data: ParsedExpense) => {
     if (!storage) {
       throw new Error('Storage non inizializzato');
     }
 
-    // Simple online save - requires internet connection
     await addExpense(storage, {
       amount: data.amount,
       category: data.category as any,
@@ -69,7 +79,12 @@ export function MainLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header
+        isOnline={isOnline}
+        pendingCount={pendingCount}
+        isSyncing={isSyncing}
+        onSyncNow={syncNow}
+      />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Initialization Status */}
@@ -117,18 +132,6 @@ export function MainLayout() {
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
             <h3 className="font-medium text-red-900 mb-2">Errore</h3>
             <p className="text-sm text-red-700">{expenseError}</p>
-          </div>
-        )}
-
-        {/* Internet Required Notice */}
-        {isInitialized && !isLoading && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center gap-2 text-sm text-blue-800">
-              <span>ℹ️</span>
-              <p>
-                <strong>Connessione internet richiesta</strong> - Questa app necessita di una connessione attiva per salvare e sincronizzare le spese su GitHub.
-              </p>
-            </div>
           </div>
         )}
 
