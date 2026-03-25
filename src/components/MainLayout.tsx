@@ -6,11 +6,12 @@ import { VoiceInput } from './VoiceInput/VoiceInput';
 import { ManualInput } from './VoiceInput/ManualInput';
 import { useExpenseParser } from '../hooks/useExpenseParser';
 import { ExpenseEditModal } from './ExpenseForm/ExpenseEditModal';
+import { ExpenseList } from './ExpenseList/ExpenseList';
 import type { ParsedExpense } from '../types/expense';
 
 export function MainLayout() {
   const { storage, isInitialized, isInitializing, error: storageError } = useGitHubStorage();
-  const { expenses, isLoading, fetchExpenses, addExpense, error: expenseError } = useExpenseStore();
+  const { expenses, isLoading, fetchExpenses, addExpense, deleteExpense, error: expenseError } = useExpenseStore();
   const { parse, error: parserError } = useExpenseParser();
   const [parsedExpense, setParsedExpense] = useState<ParsedExpense | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -128,7 +129,7 @@ export function MainLayout() {
             </div>
 
             {/* Expense Stats */}
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 📊 Statistiche
               </h3>
@@ -151,6 +152,16 @@ export function MainLayout() {
                 </div>
               </div>
             </div>
+
+            {/* Expense List */}
+            <ExpenseList
+              expenses={expenses}
+              onDelete={async (id) => {
+                if (storage) {
+                  await deleteExpense(storage, id);
+                }
+              }}
+            />
           </>
         )}
 
