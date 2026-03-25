@@ -59,16 +59,45 @@ export function MainLayout() {
 
   // Handle save from modal
   const handleSave = async (data: ParsedExpense) => {
-    if (!storage) {
-      throw new Error('Storage non inizializzato');
-    }
+    if (isOnline && storage) {
+      // Online: save to GitHub
+      await addExpense(storage, {
+        amount: data.amount,
+        category: data.category as any,
+        date: data.date,
+        description: data.description,
+      });
+    } else {
+      // Offline: queue for later sync
+      const { offlineQueue } = await import('../services/offlineQueue');
+      await offlineQueue.queueAddExpense({
+        amount: data.amount,
+        category: data.category as any,
+        date: data.date,
+        description: data.description,
+      });
 
-    await addExpense(storage, {
-      amount: data.amount,
-      category: data.category as any,
-      date: data.date,
-      description: data.description,
-    });
+      // Add to local state optimistically
+      const newExpense = {
+        id: crypto.randomUUID(),
+        amount: data.amount,
+        category: data.category as any,
+        date: data.date,
+        description: data.description,
+        createdAt: new Date().toISOString(),
+        createdBy: 'offline',
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Update local state
+      const currentExpenses = [...expenses, newExpense].sort((a, b) =>
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+
+      // Manually update the store
+      const { useExpenseStore } = await import('../store/expenseStore');
+      useExpenseStore.getState().setExpenses(currentExpenses);
+    }
   };
 
   // Handle modal close
