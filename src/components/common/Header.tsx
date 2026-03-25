@@ -1,14 +1,6 @@
 import { useAuthStore } from '../../store/authStore';
-import { SyncStatus } from './SyncStatus';
 
-interface HeaderProps {
-  isOnline?: boolean;
-  pendingCount?: number;
-  isSyncing?: boolean;
-  onSyncNow?: () => void;
-}
-
-export function Header({ isOnline = true, pendingCount = 0, isSyncing = false, onSyncNow }: HeaderProps) {
+export function Header() {
   const { githubUser, logout } = useAuthStore();
 
   return (
@@ -23,14 +15,6 @@ export function Header({ isOnline = true, pendingCount = 0, isSyncing = false, o
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Sync Status */}
-          <SyncStatus
-            isOnline={isOnline}
-            pendingCount={pendingCount}
-            isSyncing={isSyncing}
-            onSyncNow={onSyncNow}
-          />
-
           {githubUser && (
             <div className="flex items-center gap-3">
               {githubUser.avatarUrl && (

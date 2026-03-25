@@ -8,7 +8,6 @@ import { useExpenseParser } from '../hooks/useExpenseParser';
 import { ExpenseEditModal } from './ExpenseForm/ExpenseEditModal';
 import { ExpenseList } from './ExpenseList/ExpenseList';
 import { ExportButton } from './Export/ExportButton';
-import { useOfflineSync } from '../hooks/useOfflineSync';
 import { ChartsPage } from './Charts/ChartsPage';
 import { InstallPrompt } from './common/InstallPrompt';
 import type { ParsedExpense } from '../types/expense';
@@ -17,9 +16,8 @@ type TabType = 'list' | 'charts';
 
 export function MainLayout() {
   const { storage, isInitialized, isInitializing, error: storageError } = useGitHubStorage();
-  const { expenses, isLoading, fetchExpenses, deleteExpense, error: expenseError } = useExpenseStore();
+  const { expenses, isLoading, fetchExpenses, addExpense, deleteExpense, error: expenseError } = useExpenseStore();
   const { parse, error: parserError } = useExpenseParser();
-  const { isOnline, pendingCount, isSyncing, syncNow, cacheData } = useOfflineSync(storage);
   const [parsedExpense, setParsedExpense] = useState<ParsedExpense | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('list');
@@ -32,15 +30,6 @@ export function MainLayout() {
       });
     }
   }, [storage, isInitialized, fetchExpenses]);
-
-  // Cache expenses whenever they change
-  useEffect(() => {
-    if (expenses.length > 0) {
-      cacheData(expenses).catch((err) => {
-        console.error('Failed to cache expenses:', err);
-      });
-    }
-  }, [expenses, cacheData]);
 
   // Handle transcript from voice or manual input
   const handleTranscript = (text: string) => {
@@ -57,45 +46,19 @@ export function MainLayout() {
     }
   };
 
-  // Handle save from modal - OFFLINE-FIRST approach
+  // Handle save from modal - ONLINE-ONLY (simplified)
   const handleSave = async (data: ParsedExpense) => {
-    // STEP 1: ALWAYS queue and update local state first (instant feedback)
-    const { offlineQueue } = await import('../services/offlineQueue');
+    if (!storage) {
+      throw new Error('Storage non inizializzato');
+    }
 
-    const newExpense = {
-      id: crypto.randomUUID(),
-      amount: data.amount,
-      category: data.category as any,
-      date: data.date,
-      description: data.description,
-      createdAt: new Date().toISOString(),
-      createdBy: 'pending',
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Add to queue
-    await offlineQueue.queueAddExpense({
+    // Simple online save - requires internet connection
+    await addExpense(storage, {
       amount: data.amount,
       category: data.category as any,
       date: data.date,
       description: data.description,
     });
-
-    // Update UI immediately
-    const currentExpenses = [...expenses, newExpense].sort((a, b) =>
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-
-    const { useExpenseStore } = await import('../store/expenseStore');
-    useExpenseStore.getState().setExpenses(currentExpenses);
-
-    // STEP 2: If online, trigger background sync (non-blocking)
-    if (isOnline && storage) {
-      // Don't await - let it sync in background
-      setTimeout(() => {
-        syncNow().catch(() => console.log('Sync will retry automatically'));
-      }, 100);
-    }
   };
 
   // Handle modal close
@@ -106,12 +69,7 @@ export function MainLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header
-        isOnline={isOnline}
-        pendingCount={pendingCount}
-        isSyncing={isSyncing}
-        onSyncNow={syncNow}
-      />
+      <Header />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Initialization Status */}
@@ -159,6 +117,18 @@ export function MainLayout() {
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
             <h3 className="font-medium text-red-900 mb-2">Errore</h3>
             <p className="text-sm text-red-700">{expenseError}</p>
+          </div>
+        )}
+
+        {/* Internet Required Notice */}
+        {isInitialized && !isLoading && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-2 text-sm text-blue-800">
+              <span>ℹ️</span>
+              <p>
+                <strong>Connessione internet richiesta</strong> - Questa app necessita di una connessione attiva per salvare e sincronizzare le spese su GitHub.
+              </p>
+            </div>
           </div>
         )}
 
