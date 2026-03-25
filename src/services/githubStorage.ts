@@ -3,6 +3,7 @@ import type { Expense, ExpensesData } from '../types/expense';
 
 const DATA_REPO_NAME = 'spese-casa-data';
 const DATA_FILE_PATH = 'expenses.json';
+const DATA_REPO_OWNER = 'MaurizioFiammeni'; // Fixed owner for shared data repository
 const MAX_RETRIES = 3;
 const RETRY_DELAY_BASE = 1000; // 1 second
 
@@ -11,10 +12,12 @@ export class GitHubStorage {
   private owner: string;
   private repo: string = DATA_REPO_NAME;
   private path: string = DATA_FILE_PATH;
+  private currentUser: string; // The logged-in user
 
-  constructor(token: string, owner: string) {
+  constructor(token: string, currentUser: string) {
     this.octokit = new Octokit({ auth: token });
-    this.owner = owner;
+    this.owner = DATA_REPO_OWNER; // Always use fixed owner for data repo
+    this.currentUser = currentUser; // Store for createdBy field
   }
 
   /**
@@ -117,7 +120,7 @@ export class GitHubStorage {
         ...expense,
         id,
         createdAt: now,
-        createdBy: this.owner,
+        createdBy: this.currentUser, // Use logged-in user, not repo owner
         updatedAt: now,
       };
 
