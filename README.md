@@ -88,6 +88,37 @@ Università, Vitto, Abbigliamento, Casa, Auto, Trasporti e viaggi, Bollette acqu
 2. Add expenses (queued locally)
 3. Go back online → auto-sync!
 
+## 🚀 Deployment
+
+### Deploy su GitHub Pages
+
+1. **Crea Repository GitHub**:
+   ```bash
+   gh repo create spese-casa --public
+   git remote add origin https://github.com/[username]/spese-casa.git
+   git push -u origin master
+   ```
+
+2. **Abilita GitHub Pages**:
+   - Vai su Settings → Pages
+   - Source: **GitHub Actions**
+   - Salva
+
+3. **Deploy Automatico**:
+   - Ogni push su `master` triggera il deploy
+   - Oppure click "Actions" → "Deploy PWA" → "Run workflow"
+   - L'app sarà disponibile su: `https://[username].github.io/spese-casa/`
+
+4. **Aggiorna Base URL**:
+   - In [vite.config.ts](vite.config.ts), verifica che `base: '/spese-casa/'` corrisponda al nome del tuo repository
+   - Se il repo si chiama diversamente, aggiorna la linea
+
+### Deploy Manuale (alternativo)
+```bash
+npm run build
+# Upload manualmente la cartella dist/
+```
+
 ## 📝 Roadmap
 
 Vedi [plan.md](./plan.md) per il piano completo di implementazione.

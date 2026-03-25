@@ -5,6 +5,9 @@ import basicSsl from '@vitejs/plugin-basic-ssl'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Base URL for GitHub Pages (update with your repo name)
+  base: process.env.NODE_ENV === 'production' ? '/spese-casa/' : '/',
+
   plugins: [
     basicSsl(), // Enable HTTPS for Web Speech API on network
     react(),
