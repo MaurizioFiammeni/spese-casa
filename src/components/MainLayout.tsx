@@ -22,16 +22,20 @@ export function MainLayout() {
   // Fetch expenses when storage is initialized
   useEffect(() => {
     if (storage && isInitialized) {
-      fetchExpenses(storage)
-        .then(() => {
-          // Cache expenses for offline use
-          cacheData(expenses);
-        })
-        .catch((err) => {
-          console.error('Failed to fetch expenses:', err);
-        });
+      fetchExpenses(storage).catch((err) => {
+        console.error('Failed to fetch expenses:', err);
+      });
     }
-  }, [storage, isInitialized, fetchExpenses, expenses, cacheData]);
+  }, [storage, isInitialized, fetchExpenses]);
+
+  // Cache expenses whenever they change
+  useEffect(() => {
+    if (expenses.length > 0) {
+      cacheData(expenses).catch((err) => {
+        console.error('Failed to cache expenses:', err);
+      });
+    }
+  }, [expenses, cacheData]);
 
   // Handle transcript from voice or manual input
   const handleTranscript = (text: string) => {
