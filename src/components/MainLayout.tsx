@@ -8,23 +8,30 @@ import { useExpenseParser } from '../hooks/useExpenseParser';
 import { ExpenseEditModal } from './ExpenseForm/ExpenseEditModal';
 import { ExpenseList } from './ExpenseList/ExpenseList';
 import { ExportButton } from './Export/ExportButton';
+import { useOfflineSync } from '../hooks/useOfflineSync';
 import type { ParsedExpense } from '../types/expense';
 
 export function MainLayout() {
   const { storage, isInitialized, isInitializing, error: storageError } = useGitHubStorage();
   const { expenses, isLoading, fetchExpenses, addExpense, deleteExpense, error: expenseError } = useExpenseStore();
   const { parse, error: parserError } = useExpenseParser();
+  const { isOnline, pendingCount, isSyncing, syncNow, cacheData } = useOfflineSync(storage);
   const [parsedExpense, setParsedExpense] = useState<ParsedExpense | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch expenses when storage is initialized
   useEffect(() => {
     if (storage && isInitialized) {
-      fetchExpenses(storage).catch((err) => {
-        console.error('Failed to fetch expenses:', err);
-      });
+      fetchExpenses(storage)
+        .then(() => {
+          // Cache expenses for offline use
+          cacheData(expenses);
+        })
+        .catch((err) => {
+          console.error('Failed to fetch expenses:', err);
+        });
     }
-  }, [storage, isInitialized, fetchExpenses]);
+  }, [storage, isInitialized, fetchExpenses, expenses, cacheData]);
 
   // Handle transcript from voice or manual input
   const handleTranscript = (text: string) => {
@@ -63,7 +70,12 @@ export function MainLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header
+        isOnline={isOnline}
+        pendingCount={pendingCount}
+        isSyncing={isSyncing}
+        onSyncNow={syncNow}
+      />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Initialization Status */}
