@@ -7,6 +7,7 @@ import { ManualInput } from './VoiceInput/ManualInput';
 import { useExpenseParser } from '../hooks/useExpenseParser';
 import { ExpenseEditModal } from './ExpenseForm/ExpenseEditModal';
 import { ExpenseList } from './ExpenseList/ExpenseList';
+import { ExportButton } from './Export/ExportButton';
 import type { ParsedExpense } from '../types/expense';
 
 export function MainLayout() {
@@ -130,9 +131,12 @@ export function MainLayout() {
 
             {/* Expense Stats */}
             <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                📊 Statistiche
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  📊 Statistiche
+                </h3>
+                <ExportButton expenses={expenses} disabled={expenses.length === 0} />
+              </div>
               <div className="bg-primary/5 rounded-lg p-6">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                   <div>
