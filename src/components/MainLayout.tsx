@@ -9,7 +9,10 @@ import { ExpenseEditModal } from './ExpenseForm/ExpenseEditModal';
 import { ExpenseList } from './ExpenseList/ExpenseList';
 import { ExportButton } from './Export/ExportButton';
 import { useOfflineSync } from '../hooks/useOfflineSync';
+import { ChartsPage } from './Charts/ChartsPage';
 import type { ParsedExpense } from '../types/expense';
+
+type TabType = 'list' | 'charts';
 
 export function MainLayout() {
   const { storage, isInitialized, isInitializing, error: storageError } = useGitHubStorage();
@@ -18,6 +21,7 @@ export function MainLayout() {
   const { isOnline, pendingCount, isSyncing, syncNow, cacheData } = useOfflineSync(storage);
   const [parsedExpense, setParsedExpense] = useState<ParsedExpense | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('list');
 
   // Fetch expenses when storage is initialized
   useEffect(() => {
@@ -130,66 +134,103 @@ export function MainLayout() {
           </div>
         )}
 
-        {/* Voice Input Section */}
+        {/* Navigation Tabs */}
         {isInitialized && !isLoading && (
           <>
-            <div className="bg-white rounded-lg shadow p-8 mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 text-center mb-6">
-                Aggiungi una Spesa
-              </h2>
-
-              {/* Voice Input */}
-              <VoiceInput onTranscript={handleTranscript} disabled={false} />
-
-              {/* Manual Input */}
-              <ManualInput onSubmit={handleTranscript} disabled={false} />
+            <div className="bg-white rounded-lg shadow mb-6">
+              <div className="border-b border-gray-200">
+                <nav className="flex -mb-px">
+                  <button
+                    onClick={() => setActiveTab('list')}
+                    className={`flex-1 sm:flex-none px-6 py-4 font-medium text-sm border-b-2 transition ${
+                      activeTab === 'list'
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    📝 Lista Spese
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('charts')}
+                    className={`flex-1 sm:flex-none px-6 py-4 font-medium text-sm border-b-2 transition ${
+                      activeTab === 'charts'
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    📊 Grafici
+                  </button>
+                </nav>
+              </div>
             </div>
 
-            {/* Expense Stats */}
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
-                  📊 Statistiche
-                </h3>
-                <ExportButton expenses={expenses} disabled={expenses.length === 0} />
-              </div>
-              <div className="bg-primary/5 rounded-lg p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                  <div>
-                    <p className="text-3xl font-bold text-primary">{expenses.length}</p>
-                    <p className="text-sm text-gray-600">Spese totali</p>
+            {/* Lista Tab Content */}
+            {activeTab === 'list' && (
+              <>
+                <div className="bg-white rounded-lg shadow p-8 mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 text-center mb-6">
+                    Aggiungi una Spesa
+                  </h2>
+
+                  {/* Voice Input */}
+                  <VoiceInput onTranscript={handleTranscript} disabled={false} />
+
+                  {/* Manual Input */}
+                  <ManualInput onSubmit={handleTranscript} disabled={false} />
+                </div>
+
+                {/* Expense Stats */}
+                <div className="bg-white rounded-lg shadow p-6 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium text-gray-900">
+                      📊 Riepilogo
+                    </h3>
+                    <ExportButton expenses={expenses} disabled={expenses.length === 0} />
                   </div>
-                  <div>
-                    <p className="text-3xl font-bold text-primary">
-                      €{expenses.reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
-                    </p>
-                    <p className="text-sm text-gray-600">Totale speso</p>
-                  </div>
-                  <div>
-                    <p className="text-3xl font-bold text-primary">13</p>
-                    <p className="text-sm text-gray-600">Categorie</p>
+                  <div className="bg-primary/5 rounded-lg p-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                      <div>
+                        <p className="text-3xl font-bold text-primary">{expenses.length}</p>
+                        <p className="text-sm text-gray-600">Spese totali</p>
+                      </div>
+                      <div>
+                        <p className="text-3xl font-bold text-primary">
+                          €{expenses.reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
+                        </p>
+                        <p className="text-sm text-gray-600">Totale speso</p>
+                      </div>
+                      <div>
+                        <p className="text-3xl font-bold text-primary">13</p>
+                        <p className="text-sm text-gray-600">Categorie</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Expense List */}
-            <ExpenseList
-              expenses={expenses}
-              onDelete={async (id) => {
-                if (storage) {
-                  await deleteExpense(storage, id);
-                }
-              }}
-              onDeleteMonth={async (expenseIds) => {
-                if (storage) {
-                  // Delete all expenses in batch
-                  for (const id of expenseIds) {
-                    await deleteExpense(storage, id);
-                  }
-                }
-              }}
-            />
+                {/* Expense List */}
+                <ExpenseList
+                  expenses={expenses}
+                  onDelete={async (id) => {
+                    if (storage) {
+                      await deleteExpense(storage, id);
+                    }
+                  }}
+                  onDeleteMonth={async (expenseIds) => {
+                    if (storage) {
+                      // Delete all expenses in batch
+                      for (const id of expenseIds) {
+                        await deleteExpense(storage, id);
+                      }
+                    }
+                  }}
+                />
+              </>
+            )}
+
+            {/* Grafici Tab Content */}
+            {activeTab === 'charts' && (
+              <ChartsPage expenses={expenses} />
+            )}
           </>
         )}
 
