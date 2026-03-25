@@ -1,11 +1,14 @@
 import { ProtectedRoute } from './components/Auth/ProtectedRoute';
 import { MainLayout } from './components/MainLayout';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 function App() {
   return (
-    <ProtectedRoute>
-      <MainLayout />
-    </ProtectedRoute>
+    <ErrorBoundary>
+      <ProtectedRoute>
+        <MainLayout />
+      </ProtectedRoute>
+    </ErrorBoundary>
   );
 }
 

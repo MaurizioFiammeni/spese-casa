@@ -10,6 +10,7 @@ import { ExpenseList } from './ExpenseList/ExpenseList';
 import { ExportButton } from './Export/ExportButton';
 import { useOfflineSync } from '../hooks/useOfflineSync';
 import { ChartsPage } from './Charts/ChartsPage';
+import { InstallPrompt } from './common/InstallPrompt';
 import type { ParsedExpense } from '../types/expense';
 
 type TabType = 'list' | 'charts';
@@ -269,6 +270,9 @@ export function MainLayout() {
           onSave={handleSave}
           confidence={parsedExpense?.confidence || 1}
         />
+
+        {/* PWA Install Prompt */}
+        <InstallPrompt />
       </main>
     </div>
   );

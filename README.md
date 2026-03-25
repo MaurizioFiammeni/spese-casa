@@ -72,12 +72,38 @@ Università, Vitto, Abbigliamento, Casa, Auto, Trasporti e viaggi, Bollette acqu
 - **Export**: SheetJS (xlsx)
 - **PWA**: vite-plugin-pwa
 
+## 🧪 Testing
+
+### Browser Compatibility
+
+| Browser | Voice Input | PWA Install | Offline | Charts |
+|---------|-------------|-------------|---------|--------|
+| Chrome (Desktop/Android) | ✅ Full | ✅ | ✅ | ✅ |
+| Edge | ✅ Full | ✅ | ✅ | ✅ |
+| Safari (iOS/macOS) | ⚠️ Limited | ✅ | ✅ | ✅ |
+| Firefox | ❌ (use manual) | ⚠️ | ✅ | ✅ |
+
+### Test Offline Mode
+1. Open DevTools → Network → Offline
+2. Add expenses (queued locally)
+3. Go back online → auto-sync!
+
 ## 📝 Roadmap
 
 Vedi [plan.md](./plan.md) per il piano completo di implementazione.
 
 ### Fasi Completate
 - [x] Fase 1: Setup progetto base
+- [x] Fase 2: Sistema autenticazione
+- [x] Fase 3: GitHub storage layer
+- [x] Fase 4: Riconoscimento vocale
+- [x] Fase 5: Parser locale JavaScript
+- [x] Fase 6: Edit modal e flow completo
+- [x] Fase 7: Lista spese
+- [x] Fase 8: Export Excel
+- [x] Fase 9: Supporto offline
+- [x] Fase 10: Grafici e statistiche
+- [x] Fase 11: PWA features e polish
 
 ## 📄 Licenza
 
