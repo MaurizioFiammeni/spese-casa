@@ -57,7 +57,7 @@ export class GitHubStorage {
     };
 
     const content = JSON.stringify(initialData, null, 2);
-    const base64Content = btoa(unescape(encodeURIComponent(content)));
+    const base64Content = this.encodeToBase64(content);
 
     await this.octokit.rest.repos.createOrUpdateFileContents({
       owner: this.owner,
@@ -85,7 +85,7 @@ export class GitHubStorage {
         throw new Error('Invalid file response');
       }
 
-      const content = atob(response.data.content);
+      const content = this.decodeFromBase64(response.data.content);
       const data: ExpensesData = JSON.parse(content);
 
       return {
@@ -173,11 +173,46 @@ export class GitHubStorage {
   }
 
   /**
+   * Encode UTF-8 string to Base64 (modern way)
+   */
+  private encodeToBase64(str: string): string {
+    // Convert string to UTF-8 bytes using TextEncoder
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(str);
+
+    // Convert bytes to base64
+    let binary = '';
+    bytes.forEach(byte => {
+      binary += String.fromCharCode(byte);
+    });
+
+    return btoa(binary);
+  }
+
+  /**
+   * Decode Base64 to UTF-8 string (modern way)
+   */
+  private decodeFromBase64(base64: string): string {
+    // Decode base64 to binary
+    const binary = atob(base64);
+
+    // Convert binary to bytes
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    // Decode bytes to UTF-8 string
+    const decoder = new TextDecoder();
+    return decoder.decode(bytes);
+  }
+
+  /**
    * Update file with optimistic locking
    */
   private async updateFile(data: ExpensesData, sha: string, message: string): Promise<void> {
     const content = JSON.stringify(data, null, 2);
-    const base64Content = btoa(unescape(encodeURIComponent(content)));
+    const base64Content = this.encodeToBase64(content);
 
     await this.octokit.rest.repos.createOrUpdateFileContents({
       owner: this.owner,
