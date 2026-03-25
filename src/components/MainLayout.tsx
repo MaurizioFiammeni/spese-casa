@@ -17,7 +17,7 @@ type TabType = 'list' | 'charts';
 
 export function MainLayout() {
   const { storage, isInitialized, isInitializing, error: storageError } = useGitHubStorage();
-  const { expenses, isLoading, fetchExpenses, addExpense, deleteExpense, error: expenseError } = useExpenseStore();
+  const { expenses, isLoading, fetchExpenses, deleteExpense, error: expenseError } = useExpenseStore();
   const { parse, error: parserError } = useExpenseParser();
   const { isOnline, pendingCount, isSyncing, syncNow, cacheData } = useOfflineSync(storage);
   const [parsedExpense, setParsedExpense] = useState<ParsedExpense | null>(null);
@@ -57,42 +57,11 @@ export function MainLayout() {
     }
   };
 
-  // Handle save from modal
+  // Handle save from modal - OFFLINE-FIRST approach
   const handleSave = async (data: ParsedExpense) => {
-    // Try online save with timeout, fallback to offline
-    if (isOnline && storage) {
-      try {
-        // Try to save to GitHub with 10 second timeout
-        const savePromise = addExpense(storage, {
-          amount: data.amount,
-          category: data.category as any,
-          date: data.date,
-          description: data.description,
-        });
-
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Network timeout')), 10000)
-        );
-
-        await Promise.race([savePromise, timeoutPromise]);
-        // Success! GitHub save completed
-        return;
-      } catch (error) {
-        console.warn('Online save failed, falling back to offline queue:', error);
-        // Fall through to offline save
-      }
-    }
-
-    // Offline or online save failed: queue for later sync
+    // STEP 1: ALWAYS queue and update local state first (instant feedback)
     const { offlineQueue } = await import('../services/offlineQueue');
-    await offlineQueue.queueAddExpense({
-      amount: data.amount,
-      category: data.category as any,
-      date: data.date,
-      description: data.description,
-    });
 
-    // Add to local state optimistically
     const newExpense = {
       id: crypto.randomUUID(),
       amount: data.amount,
@@ -100,18 +69,33 @@ export function MainLayout() {
       date: data.date,
       description: data.description,
       createdAt: new Date().toISOString(),
-      createdBy: storage?.constructor.name.includes('GitHub') ? 'pending' : 'offline',
+      createdBy: 'pending',
       updatedAt: new Date().toISOString(),
     };
 
-    // Update local state
+    // Add to queue
+    await offlineQueue.queueAddExpense({
+      amount: data.amount,
+      category: data.category as any,
+      date: data.date,
+      description: data.description,
+    });
+
+    // Update UI immediately
     const currentExpenses = [...expenses, newExpense].sort((a, b) =>
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
 
-    // Manually update the store
     const { useExpenseStore } = await import('../store/expenseStore');
     useExpenseStore.getState().setExpenses(currentExpenses);
+
+    // STEP 2: If online, trigger background sync (non-blocking)
+    if (isOnline && storage) {
+      // Don't await - let it sync in background
+      setTimeout(() => {
+        syncNow().catch(() => console.log('Sync will retry automatically'));
+      }, 100);
+    }
   };
 
   // Handle modal close
