@@ -212,16 +212,35 @@ export function MainLayout() {
                 <ExpenseList
                   expenses={expenses}
                   onDelete={async (id) => {
-                    if (storage) {
+                    if (!storage) return;
+
+                    try {
                       await deleteExpense(storage, id);
+                      // Refresh to ensure UI is in sync
+                      await fetchExpenses(storage);
+                    } catch (error) {
+                      console.error('Delete failed:', error);
+                      // Refresh anyway to show current state
+                      await fetchExpenses(storage);
+                      throw error;
                     }
                   }}
                   onDeleteMonth={async (expenseIds) => {
-                    if (storage) {
-                      // Delete all expenses in batch
+                    if (!storage) return;
+
+                    try {
+                      // Delete all expenses in batch sequentially
                       for (const id of expenseIds) {
                         await deleteExpense(storage, id);
                       }
+
+                      // Refresh expenses after batch delete
+                      await fetchExpenses(storage);
+                    } catch (error) {
+                      console.error('Batch delete failed:', error);
+                      // Refresh anyway to show current state
+                      await fetchExpenses(storage);
+                      throw error;
                     }
                   }}
                 />
