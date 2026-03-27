@@ -3,7 +3,7 @@ import type { Category } from '../types/category';
 // Category colors (Tailwind classes)
 export const CATEGORY_COLORS: Record<Category, string> = {
   Università: 'bg-blue-500',
-  Vitto: 'bg-green-500',
+  Cibo: 'bg-green-500',
   Abbigliamento: 'bg-purple-500',
   Casa: 'bg-yellow-500',
   Auto: 'bg-red-500',
@@ -20,7 +20,7 @@ export const CATEGORY_COLORS: Record<Category, string> = {
 // Category icons (emoji)
 export const CATEGORY_ICONS: Record<Category, string> = {
   Università: '🎓',
-  Vitto: '🍽️',
+  Cibo: '🍽️',
   Abbigliamento: '👕',
   Casa: '🏠',
   Auto: '🚗',
@@ -49,7 +49,7 @@ export const CATEGORY_KEYWORDS: Record<Category, string[]> = {
     'esame',
     'materiale didattico',
   ],
-  Vitto: [
+  Cibo: [
     'supermercato',
     'spesa',
     'spese alimentari',

@@ -1,7 +1,7 @@
 // 13 categorie di spesa
 export const CATEGORIES = [
   'Università',
-  'Vitto',
+  'Cibo',
   'Abbigliamento',
   'Casa',
   'Auto',
